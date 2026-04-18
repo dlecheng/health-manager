@@ -9,13 +9,17 @@ type Props = {
 export function SavedRecordMetricCell({ raw, metric }: Props) {
   const t = raw.trim()
   if (!t) {
-    return <span className="block text-center text-slate-500">—</span>
+    return (
+      <span className="block text-center text-slate-500 dark:text-slate-400">—</span>
+    )
   }
 
   const status = assessMetricValue(t, metric)
 
   const colorClass =
-    status === 'high' || status === 'low' ? 'text-red-600' : 'text-slate-700'
+    status === 'high' || status === 'low'
+      ? 'text-red-600 dark:text-red-400'
+      : 'text-slate-700 dark:text-slate-200'
 
   return (
     <span

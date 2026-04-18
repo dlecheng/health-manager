@@ -20,6 +20,7 @@ import {
   sortByDateAsc,
   URINE_PROTEIN_QUAL_LABELS,
 } from '../lib/trendParsing'
+import { useSystemDark } from '../hooks/useSystemDark'
 
 type Props = {
   open: boolean
@@ -40,13 +41,8 @@ type QualPoint = {
 /** 与所有趋势图共用；纵轴为短数字/定性档，左侧适度留白即可 */
 const TREND_CHART_MARGIN = { top: 8, right: 12, left: 6, bottom: 12 }
 const Y_AXIS_WIDTH = 72
-const Y_TICK_PROPS = { fontSize: 10, fill: '#64748b' } as const
+const QUAL_Y_AXIS_WIDTH = 104
 const REF_AREA_GREEN = { fill: '#22c55e', fillOpacity: 0.14, strokeOpacity: 0 as number }
-const TOOLTIP_BOX_STYLE = {
-  borderRadius: '12px',
-  border: '1px solid #e0f2fe',
-  fontSize: '13px',
-}
 
 function valueForMetric(r: HealthRecord, metricId: string): string {
   return r.values.find((v) => v.metricId === metricId)?.value ?? ''
@@ -79,16 +75,18 @@ function ChartShell({
   empty: boolean
 }) {
   return (
-    <section className="rounded-xl border border-slate-100 bg-sky-50/30 p-4">
+    <section className="rounded-xl border border-slate-100 bg-sky-50/30 p-4 dark:border-slate-700 dark:bg-slate-800/40">
       <div className="mb-3">
-        <h3 className="text-sm font-medium text-slate-800">{title}</h3>
+        <h3 className="text-sm font-medium text-slate-800 dark:text-slate-100">{title}</h3>
         {unit && (
-          <p className="mt-0.5 text-xs text-slate-500">单位：{unit}</p>
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">单位：{unit}</p>
         )}
-        {hint && <p className="mt-1 text-xs text-slate-500">{hint}</p>}
+        {hint && (
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{hint}</p>
+        )}
       </div>
       {empty ? (
-        <p className="rounded-lg bg-white/80 px-3 py-6 text-center text-sm text-slate-500">
+        <p className="rounded-lg bg-white/80 px-3 py-6 text-center text-sm text-slate-500 dark:bg-slate-900/50 dark:text-slate-400">
           暂无可用数据点
         </p>
       ) : (
@@ -111,6 +109,10 @@ function NumericLineChart({
   name: string
   metric: MetricDefinition
 }) {
+  const resolvedDark = useSystemDark()
+  const strokeGrid = resolvedDark ? '#334155' : '#e0f2fe'
+  const tickFill = resolvedDark ? '#94a3b8' : '#64748b'
+  const cursorStroke = resolvedDark ? '#64748b' : '#94a3b8'
   const values = data.map((d) => d.value)
   const { domain, referenceArea, ticks, tickFormatter } =
     getNumericTrendChartConfig(metric, values)
@@ -118,11 +120,11 @@ function NumericLineChart({
   return (
     <ResponsiveContainer width="100%" height="100%">
       <LineChart data={data} margin={TREND_CHART_MARGIN}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#e0f2fe" />
+        <CartesianGrid strokeDasharray="3 3" stroke={strokeGrid} />
         <XAxis
           dataKey="xKey"
           type="category"
-          tick={{ fontSize: 11, fill: '#64748b' }}
+          tick={{ fontSize: 11, fill: tickFill }}
           tickFormatter={(xKey: string) => {
             const row = data.find((d) => d.xKey === xKey)
             return row?.date ?? xKey
@@ -132,7 +134,7 @@ function NumericLineChart({
           domain={domain}
           ticks={ticks}
           tickFormatter={tickFormatter}
-          tick={Y_TICK_PROPS}
+          tick={{ fontSize: 10, fill: tickFill }}
           width={Y_AXIS_WIDTH}
           tickMargin={6}
         />
@@ -156,16 +158,15 @@ function NumericLineChart({
             const n = typeof v === 'number' ? v : Number(v)
             if (v == null || Number.isNaN(n)) return null
             return (
-              <div className="rounded-lg border border-sky-100 bg-white px-3 py-2 text-sm shadow-sm">
-                <p className="text-slate-500">日期 {row.date}</p>
-                <p className="mt-1 font-medium text-slate-800">
+              <div className="rounded-lg border border-sky-100 bg-white px-3 py-2 text-sm shadow-sm dark:border-slate-600 dark:bg-slate-800">
+                <p className="text-slate-500 dark:text-slate-400">日期 {row.date}</p>
+                <p className="mt-1 font-medium text-slate-800 dark:text-slate-100">
                   {name}：{n}
                 </p>
               </div>
             )
           }}
-          contentStyle={TOOLTIP_BOX_STYLE}
-          cursor={{ stroke: '#94a3b8', strokeWidth: 1 }}
+          cursor={{ stroke: cursorStroke, strokeWidth: 1 }}
         />
         <Line
           type="monotone"
@@ -188,14 +189,18 @@ function QualitativeProteinChart({
   data: QualPoint[]
   displayName: string
 }) {
+  const resolvedDark = useSystemDark()
+  const strokeGrid = resolvedDark ? '#334155' : '#e0f2fe'
+  const tickFill = resolvedDark ? '#94a3b8' : '#64748b'
+  const cursorStroke = resolvedDark ? '#64748b' : '#94a3b8'
   return (
     <ResponsiveContainer width="100%" height="100%">
       <LineChart data={data} margin={TREND_CHART_MARGIN}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#e0f2fe" />
+        <CartesianGrid strokeDasharray="3 3" stroke={strokeGrid} />
         <XAxis
           dataKey="xKey"
           type="category"
-          tick={{ fontSize: 11, fill: '#64748b' }}
+          tick={{ fontSize: 11, fill: tickFill }}
           tickFormatter={(xKey: string) => {
             const row = data.find((d) => d.xKey === xKey)
             return row?.date ?? xKey
@@ -204,11 +209,12 @@ function QualitativeProteinChart({
         <YAxis
           domain={[0, 5]}
           ticks={[0, 1, 2, 3, 4, 5]}
-          tickFormatter={(v: number) =>
-            URINE_PROTEIN_QUAL_LABELS[v] ?? String(v)
-          }
-          width={Y_AXIS_WIDTH}
-          tick={Y_TICK_PROPS}
+          tickFormatter={(v: number) => {
+            const i = Math.round(Number(v))
+            return URINE_PROTEIN_QUAL_LABELS[i] ?? String(v)
+          }}
+          width={QUAL_Y_AXIS_WIDTH}
+          tick={{ fontSize: 10, fill: tickFill }}
           tickMargin={6}
         />
         <ReferenceArea
@@ -225,16 +231,15 @@ function QualitativeProteinChart({
             if (!active || !payload?.length) return null
             const row = payload[0].payload as QualPoint
             return (
-              <div className="rounded-lg border border-sky-100 bg-white px-3 py-2 text-sm shadow-sm">
-                <p className="text-slate-500">日期 {row.date}</p>
-                <p className="mt-1 font-medium text-slate-800">
+              <div className="rounded-lg border border-sky-100 bg-white px-3 py-2 text-sm shadow-sm dark:border-slate-600 dark:bg-slate-800">
+                <p className="text-slate-500 dark:text-slate-400">日期 {row.date}</p>
+                <p className="mt-1 font-medium text-slate-800 dark:text-slate-100">
                   {displayName}：{row.label ?? '—'}
                 </p>
               </div>
             )
           }}
-          contentStyle={TOOLTIP_BOX_STYLE}
-          cursor={{ stroke: '#94a3b8', strokeWidth: 1 }}
+          cursor={{ stroke: cursorStroke, strokeWidth: 1 }}
         />
         <Line
           type="monotone"
@@ -284,7 +289,7 @@ export function TrendModal({ open, onClose, records, metrics }: Props) {
         kind: 'qual' as const,
         title,
         hint:
-          '纵轴：阴性 < ± < 1+ < 2+ < 3+ < 4+；绿色带表示常见参考（阴性）',
+          '纵轴：阴性(-) < 弱阳性(±) < 1+ < 2+ < 3+ < 4+；绿色带表示常见参考（阴性）',
         unit: '序数刻度（非数值大小）',
         has,
         qualData: data,
@@ -315,32 +320,35 @@ export function TrendModal({ open, onClose, records, metrics }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/25 p-4 backdrop-blur-[2px]"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/25 p-4 backdrop-blur-[2px] dark:bg-slate-950/50"
       role="dialog"
       aria-modal="true"
       aria-labelledby="trend-title"
     >
-      <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-sky-100 bg-white p-6 shadow-xl">
+      <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-sky-100 bg-white p-6 shadow-xl dark:border-slate-700 dark:bg-slate-900">
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
-            <h2 id="trend-title" className="text-lg font-medium text-slate-800">
+            <h2
+              id="trend-title"
+              className="text-lg font-medium text-slate-800 dark:text-slate-100"
+            >
               指标趋势
             </h2>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
               与「指标管理」中的顺序一致，每项单独成图；名称以当前设置为准。仅供自我观察，解读请咨询医生。
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="shrink-0 rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-600 transition hover:bg-slate-50"
+            className="shrink-0 rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-600 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
           >
             关闭
           </button>
         </div>
 
         {!hasAnyChart ? (
-          <p className="rounded-xl bg-sky-50/80 px-4 py-8 text-center text-slate-600">
+          <p className="rounded-xl bg-sky-50/80 px-4 py-8 text-center text-slate-600 dark:bg-slate-800/60 dark:text-slate-300">
             暂无可用数据。请在记录中填写指标数值或定性结果。
           </p>
         ) : (

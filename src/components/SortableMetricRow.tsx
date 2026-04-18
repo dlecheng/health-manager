@@ -25,7 +25,7 @@ function DragHandle({
   return (
     <button
       type="button"
-      className="inline-flex shrink-0 touch-none cursor-grab items-center justify-center rounded-lg border border-transparent p-2 text-slate-400 hover:bg-slate-200/60 hover:text-slate-600 active:cursor-grabbing"
+      className="inline-flex shrink-0 touch-none cursor-grab items-center justify-center rounded-lg border border-transparent p-2 text-slate-400 hover:bg-slate-200/60 hover:text-slate-600 active:cursor-grabbing dark:text-slate-500 dark:hover:bg-slate-700/60 dark:hover:text-slate-300"
       aria-label="拖动排序"
       {...attributes}
       {...listeners}
@@ -56,8 +56,10 @@ export function SortableMetricRow({ row, onUpdate, onRemoveRequest }: Props) {
     <li
       ref={setNodeRef}
       style={style}
-      className={`rounded-xl border border-slate-100 bg-slate-50/50 p-3 ${
-        isDragging ? 'z-10 shadow-md ring-2 ring-sky-200/80' : ''
+      className={`rounded-xl border border-slate-100 bg-slate-50/50 p-3 dark:border-slate-700 dark:bg-slate-800/40 ${
+        isDragging
+          ? 'z-10 shadow-md ring-2 ring-sky-200/80 dark:ring-sky-700/60'
+          : ''
       }`}
     >
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -66,19 +68,19 @@ export function SortableMetricRow({ row, onUpdate, onRemoveRequest }: Props) {
           <input
             type="text"
             placeholder="指标名称"
-            className="min-w-[120px] flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm outline-none focus:border-sky-300 focus:ring-1 focus:ring-sky-200"
+            className="min-w-[120px] flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm outline-none focus:border-sky-300 focus:ring-1 focus:ring-sky-200 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-sky-500 dark:focus:ring-sky-800"
             value={row.name}
             onChange={(e) => onUpdate(row.id, { name: e.target.value })}
           />
           <input
             type="text"
             placeholder="单位（可空）"
-            className="min-w-[100px] flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm outline-none focus:border-sky-300 focus:ring-1 focus:ring-sky-200"
+            className="min-w-[100px] flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm outline-none focus:border-sky-300 focus:ring-1 focus:ring-sky-200 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-sky-500 dark:focus:ring-sky-800"
             value={row.unit}
             onChange={(e) => onUpdate(row.id, { unit: e.target.value })}
           />
           <select
-            className="min-w-[180px] rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm outline-none focus:border-sky-300 focus:ring-1 focus:ring-sky-200"
+            className="min-w-[180px] rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-sm outline-none focus:border-sky-300 focus:ring-1 focus:ring-sky-200 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-sky-500 dark:focus:ring-sky-800"
             value={row.chartKind}
             onChange={(e) =>
               onUpdate(row.id, {
@@ -92,7 +94,7 @@ export function SortableMetricRow({ row, onUpdate, onRemoveRequest }: Props) {
           <button
             type="button"
             onClick={() => onRemoveRequest(row.id)}
-            className="shrink-0 rounded-lg border border-rose-100 px-2.5 py-2 text-sm text-rose-600 hover:bg-rose-50"
+            className="shrink-0 rounded-lg border border-rose-100 px-2.5 py-2 text-sm text-rose-600 hover:bg-rose-50 dark:border-rose-900/60 dark:text-rose-400 dark:hover:bg-rose-950/40"
           >
             删除
           </button>

@@ -17,7 +17,7 @@ export function parseNum(s: string): number | null {
 }
 
 /**
- * 定性尿蛋白：阴性 < ± < 1+ < 2+ < 3+ < 4+ → 序数 0–5（用于折线 Y 值）
+ * 定性尿蛋白：阴性(-) < 弱阳性(±) < 1+ < 2+ < 3+ < 4+ → 序数 0–5（用于折线 Y 值）
  * 返回 null 表示不匹配定性模式（可能为定量或其它文字）
  */
 export function parseUrineProteinQualitative(input: string): number | null {
@@ -27,17 +27,20 @@ export function parseUrineProteinQualitative(input: string): number | null {
   const compact = raw.replace(/\s+/g, '')
   const t = compact.replace(/[（）()]/g, '')
 
-  // 阴性
+  // 阴性(-)（兼容「阴性」「阴」「阴性-」等，含 OCR 常见写法）
   if (
-    /^(阴性|阴)$/.test(t) ||
+    /^阴性(?:[-－])?$/.test(t) ||
+    /^阴$/.test(t) ||
     /^[-－]+$/.test(t) ||
     /^neg(ative)?$/i.test(t)
   ) {
     return 0
   }
 
-  // ± / +-
+  // 弱阳性(±)：与 ±、TRACE 等同档，介于阴性与 1+ 之间（兼容「弱阳性±」）
   if (
+    /弱阳性/.test(t) ||
+    t === '弱阳' ||
     t === '±' ||
     t === '+-' ||
     t === '+－' ||
@@ -58,8 +61,8 @@ export function parseUrineProteinQualitative(input: string): number | null {
 
 /** Y 轴刻度与提示用文案（与 parseUrineProteinQualitative 返回值 0–5 对应） */
 export const URINE_PROTEIN_QUAL_LABELS = [
-  '阴性',
-  '±',
+  '阴性(-)',
+  '弱阳性(±)',
   '1+',
   '2+',
   '3+',

@@ -59,11 +59,22 @@ const BY_NORMALIZED_NAME: Record<string, RefSpec> = {
   甘油三酯: { kind: 'two', min: 0.45, max: 1.7 },
   低密度脂蛋白胆固醇: { kind: 'upper', max: 3.4 },
   血清白蛋白: { kind: 'two', min: 35, max: 55 },
+  /** 血/血清尿酸，μmol/L；性别与实验室略有差异，此为常见成人简化区间 */
   尿酸: { kind: 'two', min: 150, max: 420 },
+  血尿酸: { kind: 'two', min: 150, max: 420 },
+  血清尿酸: { kind: 'two', min: 150, max: 420 },
+  /** 尿沉渣红细胞 个/HP（按用户报告常用 0～10） */
+  沉渣红细胞: { kind: 'two', min: 0, max: 10 },
+  尿沉渣红细胞: { kind: 'two', min: 0, max: 10 },
 }
 
 /** 名称包含即匹配（长串优先） */
 const NAME_CONTAINS: { needle: string; spec: RefSpec }[] = [
+  { needle: '尿沉渣红细胞', spec: { kind: 'two', min: 0, max: 10 } },
+  { needle: '沉渣红细胞', spec: { kind: 'two', min: 0, max: 10 } },
+  { needle: '血清尿酸', spec: { kind: 'two', min: 150, max: 420 } },
+  { needle: '血尿酸', spec: { kind: 'two', min: 150, max: 420 } },
+  { needle: '尿酸', spec: { kind: 'two', min: 150, max: 420 } },
   { needle: '尿蛋白/肌酐', spec: { kind: 'two', min: 0, max: 3.5 } },
   { needle: '甲状旁腺激素', spec: { kind: 'two', min: 15, max: 65 } },
   { needle: '维生素d', spec: { kind: 'two', min: 30, max: 100 } },

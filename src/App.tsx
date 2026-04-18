@@ -10,6 +10,7 @@ import { ConfirmDialog } from './components/ConfirmDialog'
 import { LabReportImportModal } from './components/LabReportImportModal'
 import { MetricManagerModal } from './components/MetricManagerModal'
 import { SavedRecordMetricCell } from './components/SavedRecordMetricCell'
+import { InterpretationModal } from './components/InterpretationModal'
 import { TrendModal } from './components/TrendModal'
 import { referenceRangeHint } from './lib/referenceRanges'
 import { todayISO } from './lib/date'
@@ -57,6 +58,7 @@ export default function App() {
   const [pendingDeleteRecordId, setPendingDeleteRecordId] = useState<string | null>(
     null,
   )
+  const [interpretOpen, setInterpretOpen] = useState(false)
   const [labImportOpen, setLabImportOpen] = useState(false)
   const [labImportFiles, setLabImportFiles] = useState<File[]>([])
   const labFileInputRef = useRef<HTMLInputElement>(null)
@@ -266,45 +268,55 @@ export default function App() {
       .join('；')
   }
 
+  /** 供横向滚动容器估算最小宽度（日期+操作约 220px，每指标列约 76px） */
+  const tableMinWidthPx = useMemo(() => {
+    const dateAndActions = 220
+    const perMetric = 76
+    const orphanW = showOrphanColumn ? 140 : 0
+    return dateAndActions + metrics.length * perMetric + orphanW
+  }, [metrics.length, showOrphanColumn])
+
   return (
-    <div className="min-h-svh bg-gradient-to-b from-sky-50 to-white text-slate-800">
-      <div className="mx-auto max-w-4xl px-4 py-10">
+    <div className="min-h-svh bg-gradient-to-b from-sky-50 to-white text-slate-800 dark:from-slate-950 dark:to-slate-900 dark:text-slate-100">
+      <div className="mx-auto w-full max-w-[min(100rem,calc(100vw-1.5rem))] px-3 py-10 sm:px-5 lg:px-8">
         <header className="mb-10 text-center">
-          <h1 className="text-2xl font-medium tracking-tight text-slate-800 sm:text-3xl">
+          <h1 className="text-2xl font-medium tracking-tight text-slate-800 dark:text-slate-100 sm:text-3xl">
             我的健康管家
           </h1>
-          <p className="mt-2 text-sm text-slate-500">
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
             记录化验结果，方便回顾与就诊时出示（本工具不能替代医疗建议）。
           </p>
         </header>
 
-        <section className="rounded-2xl border border-sky-100/80 bg-white/90 p-6 shadow-sm shadow-sky-100/50 backdrop-blur-sm">
-          <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-            <h2 className="text-base font-medium text-slate-700">
+        <section className="rounded-2xl border border-sky-100/80 bg-white/90 p-4 shadow-sm shadow-sky-100/50 backdrop-blur-sm sm:p-5 dark:border-slate-700/80 dark:bg-slate-900/90 dark:shadow-slate-950/50">
+          <div className="mb-3 flex flex-wrap items-start justify-between gap-3 sm:mb-4">
+            <h2 className="text-base font-medium text-slate-700 dark:text-slate-200">
               {editingId ? '编辑记录' : '新建记录'}
             </h2>
             <button
               type="button"
               onClick={() => setMetricMgrOpen(true)}
-              className="shrink-0 rounded-xl border border-sky-200 bg-white px-4 py-2 text-sm font-medium text-sky-800 shadow-sm transition hover:bg-sky-50"
+              className="shrink-0 rounded-xl border border-sky-200 bg-white px-4 py-2 text-sm font-medium text-sky-800 shadow-sm transition hover:bg-sky-50 dark:border-slate-600 dark:bg-slate-800 dark:text-sky-200 dark:hover:bg-slate-700"
             >
               指标管理
             </button>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             <label
-              className="block cursor-pointer"
+              className="block w-full max-w-full cursor-pointer sm:max-w-[14rem]"
               onClick={(e) => {
                 if ((e.target as HTMLElement).closest('input')) return
                 openDatePicker()
               }}
             >
-              <span className="mb-1.5 block text-sm text-slate-600">检查日期</span>
+              <span className="mb-1 block text-sm text-slate-600 dark:text-slate-300">
+                检查日期
+              </span>
               <input
                 ref={dateInputRef}
                 type="date"
-                className="w-full rounded-xl border border-slate-200 bg-sky-50/40 px-3 py-2.5 text-slate-800 outline-none ring-sky-200 transition focus:border-sky-300 focus:ring-2"
+                className="w-full rounded-xl border border-slate-200 bg-sky-50/40 px-3 py-2 text-sm text-slate-800 outline-none ring-sky-200 transition focus:border-sky-300 focus:ring-2 dark:border-slate-600 dark:bg-slate-800/60 dark:text-slate-100 dark:ring-slate-600 dark:focus:border-sky-500"
                 value={form.date}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, date: e.target.value }))
@@ -324,41 +336,45 @@ export default function App() {
             </label>
 
             {metrics.length === 0 ? (
-              <p className="rounded-xl border border-sky-100 bg-sky-50/60 px-3 py-4 text-sm text-slate-700">
+              <p className="rounded-xl border border-sky-100 bg-sky-50/60 px-3 py-3 text-sm text-slate-700 dark:border-slate-600 dark:bg-slate-800/50 dark:text-slate-200">
                 请点击指标管理添加指标
               </p>
             ) : (
-              metrics.map((m) => (
-                <label key={m.id} className="block">
-                  <span className="mb-1.5 block text-sm text-slate-600">
-                    {m.unit ? `${m.name}（${m.unit}）` : m.name}
-                  </span>
-                  <input
-                    type="text"
-                    inputMode={m.chartKind === 'urine-protein-qual' ? 'text' : 'decimal'}
-                    placeholder={
-                      m.chartKind === 'urine-protein-qual'
-                        ? '例如 阴性、±、1+'
-                        : '填写结果'
-                    }
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-slate-800 outline-none ring-sky-200 transition focus:border-sky-300 focus:ring-2"
-                    value={form.byMetric[m.id] ?? ''}
-                    onChange={(e) =>
-                      setForm((f) => ({
-                        ...f,
-                        byMetric: {
-                          ...f.byMetric,
-                          [m.id]: e.target.value,
-                        },
-                      }))
-                    }
-                  />
-                </label>
-              ))
+              <div className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+                {metrics.map((m) => (
+                  <label key={m.id} className="flex min-w-0 flex-col">
+                    <span className="mb-1 line-clamp-2 text-sm text-slate-600 dark:text-slate-300">
+                      {m.unit ? `${m.name}（${m.unit}）` : m.name}
+                    </span>
+                    <input
+                      type="text"
+                      inputMode={
+                        m.chartKind === 'urine-protein-qual' ? 'text' : 'decimal'
+                      }
+                      placeholder={
+                        m.chartKind === 'urine-protein-qual'
+                          ? '例如 阴性(-)、弱阳性(±)、1+'
+                          : '填写结果'
+                      }
+                      className="w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none ring-sky-200 transition focus:border-sky-300 focus:ring-2 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-600 dark:focus:border-sky-500"
+                      value={form.byMetric[m.id] ?? ''}
+                      onChange={(e) =>
+                        setForm((f) => ({
+                          ...f,
+                          byMetric: {
+                            ...f.byMetric,
+                            [m.id]: e.target.value,
+                          },
+                        }))
+                      }
+                    />
+                  </label>
+                ))}
+              </div>
             )}
           </div>
 
-          <div className="mt-6 flex flex-wrap items-end justify-between gap-4">
+          <div className="mt-4 flex flex-wrap items-end justify-between gap-3 sm:mt-5 sm:gap-4">
             <div className="min-w-0">
               <input
                 ref={labFileInputRef}
@@ -380,7 +396,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => labFileInputRef.current?.click()}
-                className="rounded-xl border border-dashed border-sky-300 bg-sky-50/50 px-4 py-2.5 text-sm font-medium text-sky-800 transition hover:bg-sky-100/80"
+                className="rounded-xl border border-dashed border-sky-300 bg-sky-50/50 px-4 py-2.5 text-sm font-medium text-sky-800 transition hover:bg-sky-100/80 dark:border-sky-700 dark:bg-slate-800/80 dark:text-sky-200 dark:hover:bg-slate-700"
               >
                 上传检验报告（可多选）
               </button>
@@ -389,7 +405,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={handleSave}
-                className="rounded-xl bg-sky-500 px-5 py-2.5 text-sm font-medium text-white shadow-sm shadow-sky-200/50 transition hover:bg-sky-600"
+                className="rounded-xl bg-sky-500 px-5 py-2.5 text-sm font-medium text-white shadow-sm shadow-sky-200/50 transition hover:bg-sky-600 dark:shadow-slate-900/50"
               >
                 保存记录
               </button>
@@ -397,7 +413,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm text-slate-600 transition hover:bg-slate-50"
+                  className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm text-slate-600 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
                 >
                   取消编辑
                 </button>
@@ -408,58 +424,47 @@ export default function App() {
 
         <section className="mt-10">
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-            <h2 className="text-base font-medium text-slate-700">已保存记录</h2>
+            <h2 className="text-base font-medium text-slate-700 dark:text-slate-200">
+              已保存记录
+            </h2>
             <div className="flex flex-wrap gap-2">
-              <input
-                ref={backupCsvInputRef}
-                type="file"
-                accept=".csv,text/csv"
-                className="sr-only"
-                aria-hidden
-                onChange={handleBackupCsvChange}
-              />
+              <button
+                type="button"
+                disabled={sortedForTable.length === 0}
+                onClick={() => setInterpretOpen(true)}
+                className="rounded-xl border border-sky-200 bg-white px-4 py-2 text-sm font-medium text-sky-700 shadow-sm transition hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-sky-300 dark:hover:bg-slate-700"
+              >
+                指标解读
+              </button>
               <button
                 type="button"
                 onClick={() => setTrendOpen(true)}
-                className="rounded-xl border border-sky-200 bg-white px-4 py-2 text-sm font-medium text-sky-700 shadow-sm transition hover:bg-sky-50"
+                className="rounded-xl border border-sky-200 bg-white px-4 py-2 text-sm font-medium text-sky-700 shadow-sm transition hover:bg-sky-50 dark:border-slate-600 dark:bg-slate-800 dark:text-sky-300 dark:hover:bg-slate-700"
               >
                 查看趋势图表
-              </button>
-              <button
-                type="button"
-                onClick={handleExportDetailCsv}
-                className="rounded-xl border border-sky-200 bg-white px-4 py-2 text-sm font-medium text-sky-700 shadow-sm transition hover:bg-sky-50"
-              >
-                导出 CSV 备份
-              </button>
-              <button
-                type="button"
-                onClick={() => backupCsvInputRef.current?.click()}
-                className="rounded-xl border border-sky-200 bg-white px-4 py-2 text-sm font-medium text-sky-700 shadow-sm transition hover:bg-sky-50"
-              >
-                导入 CSV 备份
               </button>
             </div>
           </div>
 
           {sortedForTable.length === 0 ? (
-            <p className="rounded-2xl border border-dashed border-slate-200 bg-white/60 py-12 text-center text-slate-500">
+            <p className="rounded-2xl border border-dashed border-slate-200 bg-white/60 py-12 text-center text-slate-500 dark:border-slate-600 dark:bg-slate-900/40 dark:text-slate-400">
               暂无记录，请先在上方填写并保存。
             </p>
           ) : (
             <>
-            <div className="overflow-x-auto rounded-2xl border border-slate-100 bg-white/90 shadow-sm">
+            <div className="min-w-0 overflow-x-auto rounded-2xl border border-slate-100 bg-white/90 shadow-sm dark:border-slate-700 dark:bg-slate-900/90">
               <table
-                className="w-full border-collapse text-left text-sm"
-                style={{ minWidth: `${280 + metrics.length * 100 + (showOrphanColumn ? 180 : 0)}px` }}
+                className="w-full min-w-0 table-auto border-collapse text-left text-sm"
+                style={{ minWidth: `${tableMinWidthPx}px` }}
               >
                 <thead>
-                  <tr className="border-b border-slate-100 bg-sky-50/50">
-                    <th className="whitespace-nowrap px-3 py-3 font-medium text-slate-600">
+                  <tr className="border-b border-slate-100 bg-sky-50/50 dark:border-slate-700 dark:bg-slate-800/60">
+                    <th className="whitespace-nowrap px-3 py-3 font-medium text-slate-600 dark:text-slate-300">
                       日期
                     </th>
                     {metrics.map((m) => {
                       const hint = referenceRangeHint(m)
+                      const unitLabel = m.unit?.trim() ? m.unit : '—'
                       const title = [
                         m.unit ? `${m.name} ${m.unit}` : m.name,
                         hint,
@@ -469,19 +474,24 @@ export default function App() {
                       return (
                         <th
                           key={m.id}
-                          className="min-w-[88px] px-3 py-3 text-center font-medium text-slate-600"
+                          className="min-w-[72px] px-2 py-3 text-center text-xs font-medium text-slate-600 sm:min-w-[76px] sm:px-3 sm:text-sm dark:text-slate-300"
                           title={title}
                         >
-                          <span className="line-clamp-2">{m.name}</span>
+                          <div className="flex flex-col items-center justify-center gap-1">
+                            <span className="line-clamp-2 leading-snug">{m.name}</span>
+                            <span className="max-w-[10rem] break-words text-center text-[10px] font-normal leading-tight text-slate-500 dark:text-slate-400 sm:max-w-none sm:text-[11px]">
+                              {unitLabel}
+                            </span>
+                          </div>
                         </th>
                       )
                     })}
                     {showOrphanColumn && (
-                      <th className="min-w-[160px] px-3 py-3 font-medium text-slate-600">
+                      <th className="min-w-[120px] px-2 py-3 text-xs font-medium text-slate-600 sm:min-w-[140px] sm:px-3 sm:text-sm dark:text-slate-300">
                         历史未归类
                       </th>
                     )}
-                    <th className="whitespace-nowrap px-3 py-3 font-medium text-slate-600">
+                    <th className="whitespace-nowrap px-3 py-3 font-medium text-slate-600 dark:text-slate-300">
                       操作
                     </th>
                   </tr>
@@ -490,9 +500,9 @@ export default function App() {
                   {sortedForTable.map((r) => (
                     <tr
                       key={r.id}
-                      className="border-b border-slate-50 last:border-0 hover:bg-sky-50/30"
+                      className="border-b border-slate-50 last:border-0 hover:bg-sky-50/30 dark:border-slate-700/80 dark:hover:bg-slate-800/40"
                     >
-                      <td className="whitespace-nowrap px-3 py-2.5 text-slate-800">
+                      <td className="whitespace-nowrap px-3 py-2.5 text-slate-800 dark:text-slate-100">
                         {r.date}
                       </td>
                       {metrics.map((m) => {
@@ -502,7 +512,7 @@ export default function App() {
                         return (
                           <td
                             key={m.id}
-                            className="max-w-[120px] px-3 py-2.5 text-center text-sm"
+                            className="max-w-[100px] px-2 py-2.5 text-center text-xs sm:max-w-[7.5rem] sm:px-3 sm:text-sm"
                             title={title || undefined}
                           >
                             <SavedRecordMetricCell raw={v} metric={m} />
@@ -511,7 +521,7 @@ export default function App() {
                       })}
                       {showOrphanColumn && (
                         <td
-                          className="max-w-[200px] px-3 py-2.5 text-xs text-slate-600"
+                          className="max-w-[min(200px,28vw)] px-2 py-2.5 text-xs text-slate-600 sm:px-3 dark:text-slate-400"
                           title={orphanCell(r)}
                         >
                           {orphanCell(r)}
@@ -521,14 +531,14 @@ export default function App() {
                         <button
                           type="button"
                           onClick={() => handleEdit(r)}
-                          className="mr-2 text-sky-600 hover:underline"
+                          className="mr-2 text-sky-600 hover:underline dark:text-sky-400"
                         >
                           编辑
                         </button>
                         <button
                           type="button"
                           onClick={() => requestDeleteRecord(r.id)}
-                          className="text-rose-600 hover:underline"
+                          className="text-rose-600 hover:underline dark:text-rose-400"
                         >
                           删除
                         </button>
@@ -538,12 +548,37 @@ export default function App() {
                 </tbody>
               </table>
             </div>
-            <p className="mt-2 text-xs text-slate-400">
+            <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
               红色数值与箭头依据常见成人参考范围简化提示；不同实验室与个体情况不同，请以化验单与医生解读为准。
             </p>
             </>
           )}
         </section>
+
+        <div className="mt-12 flex flex-wrap items-center justify-center gap-3 pb-2">
+          <input
+            ref={backupCsvInputRef}
+            type="file"
+            accept=".csv,text/csv"
+            className="sr-only"
+            aria-hidden
+            onChange={handleBackupCsvChange}
+          />
+          <button
+            type="button"
+            onClick={handleExportDetailCsv}
+            className="rounded-xl border border-sky-200 bg-white px-4 py-2 text-sm font-medium text-sky-700 shadow-sm transition hover:bg-sky-50 dark:border-slate-600 dark:bg-slate-800 dark:text-sky-300 dark:hover:bg-slate-700"
+          >
+            导出 CSV 备份
+          </button>
+          <button
+            type="button"
+            onClick={() => backupCsvInputRef.current?.click()}
+            className="rounded-xl border border-sky-200 bg-white px-4 py-2 text-sm font-medium text-sky-700 shadow-sm transition hover:bg-sky-50 dark:border-slate-600 dark:bg-slate-800 dark:text-sky-300 dark:hover:bg-slate-700"
+          >
+            导入 CSV 备份
+          </button>
+        </div>
       </div>
 
       <TrendModal
@@ -551,6 +586,13 @@ export default function App() {
         onClose={() => setTrendOpen(false)}
         records={records}
         metrics={metrics}
+      />
+
+      <InterpretationModal
+        open={interpretOpen}
+        onClose={() => setInterpretOpen(false)}
+        metrics={metrics}
+        records={records}
       />
 
       <MetricManagerModal

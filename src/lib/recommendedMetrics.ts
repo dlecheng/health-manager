@@ -17,6 +17,8 @@ export const RECOMMENDED_METRICS: readonly RecommendedMetric[] = [
   { name: '尿蛋白定性', unit: '', chartKind: 'urine-protein-qual' },
   { name: '尿蛋白定量', unit: 'g/24h', chartKind: 'number' },
   { name: '尿蛋白/肌酐比值', unit: 'mg/mmol' },
+  { name: '沉渣红细胞', unit: '个/HP' },
+  { name: '尿隐血', unit: '' },
   /* —— 肾功能 / 滤过 —— */
   { name: '血肌酐', unit: 'μmol/L', chartKind: 'number' },
   { name: 'eGFR', unit: 'mL/min/1.73m²' },

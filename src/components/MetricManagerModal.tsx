@@ -217,44 +217,51 @@ export function MetricManagerModal({
     <>
       {metricDeleteDialog}
       <div
-        className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/30 p-4 backdrop-blur-[2px]"
+        className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/30 p-4 backdrop-blur-[2px] dark:bg-slate-950/50"
         role="dialog"
         aria-modal="true"
         aria-labelledby="metric-mgr-title"
       >
-        <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-sky-100 bg-white p-6 shadow-xl">
+        <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-sky-100 bg-white p-6 shadow-xl dark:border-slate-700 dark:bg-slate-900">
           <div className="mb-4 flex items-start justify-between gap-3">
             <div>
-              <h2 id="metric-mgr-title" className="text-lg font-medium text-slate-800">
+              <h2
+                id="metric-mgr-title"
+                className="text-lg font-medium text-slate-800 dark:text-slate-100"
+              >
                 指标管理
               </h2>
-              <p className="mt-1 text-sm text-slate-500">
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                 此处列表与「新建记录」中的指标一致：修改名称或单位后，保存的新记录将使用当前名称；列表中所有指标均支持增删改。拖动左侧手柄可调整顺序，顺序将同步到新建记录、已保存记录表格列与趋势图。
               </p>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="shrink-0 rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50"
+              className="shrink-0 rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
             >
               完成
             </button>
           </div>
 
           <section className="mb-6">
-            <h3 className="mb-2 text-sm font-medium text-slate-700">常用指标推荐</h3>
-            <p className="mb-2 text-xs text-slate-500">点击加入列表（同名同单位不重复）</p>
+            <h3 className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-200">
+              常用指标推荐
+            </h3>
+            <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">
+              点击加入列表（同名同单位不重复）
+            </p>
             <div className="flex flex-wrap gap-2">
               {RECOMMENDED_METRICS.map((rec) => (
                 <button
                   key={`${rec.name}-${rec.unit}`}
                   type="button"
                   onClick={() => addRecommended(rec)}
-                  className="rounded-full border border-sky-100 bg-sky-50/80 px-3 py-1 text-xs text-sky-900 transition hover:bg-sky-100"
+                  className="rounded-full border border-sky-100 bg-sky-50/80 px-3 py-1 text-xs text-sky-900 transition hover:bg-sky-100 dark:border-sky-800 dark:bg-sky-950/50 dark:text-sky-200 dark:hover:bg-sky-900/60"
                 >
                   {rec.name}
                   {rec.unit ? (
-                    <span className="text-slate-500"> {rec.unit}</span>
+                    <span className="text-slate-500 dark:text-slate-400"> {rec.unit}</span>
                   ) : null}
                 </button>
               ))}
@@ -264,8 +271,8 @@ export function MetricManagerModal({
           <section>
             <div className="mb-2 flex items-center justify-between gap-2">
               <div>
-                <h3 className="text-sm font-medium text-slate-700">全部指标</h3>
-                <p className="mt-0.5 text-xs text-slate-500">
+                <h3 className="text-sm font-medium text-slate-700 dark:text-slate-200">全部指标</h3>
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                   拖动手柄调整顺序
                 </p>
               </div>
@@ -279,7 +286,7 @@ export function MetricManagerModal({
             </div>
 
             {draft.length === 0 ? (
-              <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50/60 py-8 text-center text-sm text-slate-500">
+              <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50/60 py-8 text-center text-sm text-slate-500 dark:border-slate-600 dark:bg-slate-800/40 dark:text-slate-400">
                 请从上方「常用指标推荐」添加，或点击「添加指标」。
               </p>
             ) : (
